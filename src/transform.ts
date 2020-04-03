@@ -20,26 +20,13 @@ import {
   hrTimeToMilliseconds,
   hrTimeToMicroseconds,
 } from '@opentelemetry/core';
-import {
-  ThriftSpan,
-  Tag,
-  Log,
-  ThriftTag,
-  ThriftLog,
-  ThriftUtils,
-  Utils,
-  ThriftReference,
-  TagValue,
-  ThriftReferenceType,
-} from './types';
-
-const DEFAULT_FLAGS = 0x1;
+import { Event } from 'libhoney/event'
 
 /**
- * Translate OpenTelemetry ReadableSpan to Jaeger Thrift Span
+ * Translate OpenTelemetry ReadableSpan to Honeycomb Event
  * @param span Span to be translated
  */
-export function spanToThrift(span: ReadableSpan): ThriftSpan {
+export function spanToThrift(span: ReadableSpan): Span {
   const traceId = span.spanContext.traceId.padStart(32, '0');
   const traceIdHigh = traceId.slice(0, 16);
   const traceIdLow = traceId.slice(16);
@@ -102,7 +89,7 @@ export function spanToThrift(span: ReadableSpan): ThriftSpan {
   };
 }
 
-/** Translate OpenTelemetry {@link Link}s to Jaeger ThriftReference. */
+/** Translate OpenTelemetry {@link Link}s to Honeycomb Event. */
 function spanLinksToThriftRefs(
   links: Link[],
   parentSpanId?: string
@@ -122,7 +109,7 @@ function spanLinksToThriftRefs(
     .filter(ref => !!ref) as ThriftReference[];
 }
 
-/** Translate OpenTelemetry attribute value to Jaeger TagValue. */
+/** Translate OpenTelemetry attribute value to Honeycomb key/value pair. */
 function toTagValue(value: unknown): TagValue {
   const valueType = typeof value;
   if (valueType === 'boolean') {
