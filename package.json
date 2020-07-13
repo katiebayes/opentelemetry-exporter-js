@@ -7,9 +7,7 @@
   "repository": "honeycombio/opentelemetry-exporter-js",
   "scripts": {
     "precompile": "tsc --version",
-    "version:update": "node scripts/version-update.js",
-    "compile": "yarn version:update && tsc -p .",
-    "prepare": "yarn compile"
+    "version:update": "node scripts/version-update.js"
   },
   "keywords": [
     "opentelemetry",
@@ -34,7 +32,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@opentelemetry/resources": "^0.6.0",
+    "@opentelemetry/resources": "^0.9.0",
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.6.9",
     "codecov": "^3.6.1",
@@ -50,7 +48,6 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^0.9.0",
-    "@opentelemetry/base": "^0.9.0",
     "@opentelemetry/core": "^0.9.0",
     "@opentelemetry/tracing": "^0.9.0",
     "libhoney": "^2.2.0",
