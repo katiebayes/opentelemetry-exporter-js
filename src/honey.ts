@@ -14,114 +14,35 @@
  * limitations under the License.
  */
 
-import * as api from '@opentelemetry/api';
-import { ExportResult } from '@opentelemetry/base';
-import { NoopLogger } from '@opentelemetry/core';
-import { ReadableSpan, SpanExporter } from '@opentelemetry/tracing';
-import { Socket } from 'dgram';
-import { spanToThrift } from './transform';
-import * as libhoney from 'libhoney';
+//import * as api from '@opentelemetry/api';
+//import { NoopLogger } from '@opentelemetry/core';
+import { //ReadableSpan, 
+  SpanExporter } from '@opentelemetry/tracing';
+//import { Socket } from 'dgram';
+//import * as libhoney from 'libhoney';
+
+import * as honeycombTypes from './types';
 
 /**
  * Format and sends span information to Honeycomb Exporter.
  */
-export class HoneycombExporter implements SpanExporter {
-  private readonly _logger: api.Logger;
-  private readonly _process: jaegerTypes.ThriftProcess;
-  private readonly _sender: typeof jaegerTypes.UDPSender;
-  private readonly _forceFlushOnShutdown: boolean = true;
-  private readonly _onShutdownFlushTimeout: number;
-
-  constructor(config: jaegerTypes.ExporterConfig) {
-    this._logger = config.logger || new NoopLogger();
-    const tags: jaegerTypes.Tag[] = config.tags || [];
-    this._forceFlushOnShutdown =
-      typeof config.forceFlush === 'boolean' ? config.forceFlush : true;
-    this._onShutdownFlushTimeout =
-      typeof config.flushTimeout === 'number' ? config.flushTimeout : 2000;
-
-    this._sender = new jaegerTypes.UDPSender(config);
-    if (this._sender._client instanceof Socket) {
-      // unref socket to prevent it from keeping the process running
-      this._sender._client.unref();
-    }
-
-    this._process = {
-      serviceName: config.serviceName,
-      tags: jaegerTypes.ThriftUtils.getThriftTags(tags),
-    };
-    this._sender.setProcess(this._process);
+class HoneycombExporter implements SpanExporter {
+  constructor(config: honeycombTypes.ExporterConfig) {
+      const localConfig = Object.assign({}, config);
+      console.log(localConfig);
+  }
+  export() {
+      console.log('export');
+      console.log('hello Im an exporter');
+      return null;
   }
 
-  /** Exports a list of spans to Jaeger. */
-  export(
-    spans: ReadableSpan[],
-    resultCallback: (result: ExportResult) => void
-  ): void {
-    if (spans.length === 0) {
-      return resultCallback(ExportResult.SUCCESS);
-    }
-    this._logger.debug('Jaeger exporter export');
-    this._sendSpans(spans, resultCallback).catch(err => {
-      this._logger.error(`JaegerExporter failed to export: ${err}`);
-    });
+  shutdown() {
+      console.log("shutdown");
+      return null;
   }
+}
 
-  /** Shutdown exporter. */
-  shutdown(): void {
-    if (!this._forceFlushOnShutdown) return;
-    // Make an optimistic flush.
-    this._flush();
-    // Sleeping x seconds before closing the sender's connection to ensure
-    // all spans are flushed.
-    setTimeout(() => {
-      this._sender.close();
-    }, this._onShutdownFlushTimeout);
-  }
-
-  /** Transform spans and sends to Jaeger service. */
-  private async _sendSpans(
-    spans: ReadableSpan[],
-    done?: (result: ExportResult) => void
-  ) {
-    const thriftSpan = spans.map(span => spanToThrift(span));
-    for (const span of thriftSpan) {
-      try {
-        await this._append(span);
-      } catch (err) {
-        this._logger.error(`failed to append span: ${err}`);
-        // TODO right now we break out on first error, is that desirable?
-        if (done) return done(ExportResult.FAILED_NOT_RETRYABLE);
-      }
-    }
-    this._logger.debug('successful append for : %s', thriftSpan.length);
-
-    // Flush all spans on each export. No-op if span buffer is empty
-    await this._flush();
-
-    if (done) return done(ExportResult.SUCCESS);
-  }
-
-  private async _append(span: jaegerTypes.ThriftSpan): Promise<number> {
-    return new Promise((resolve, reject) => {
-      this._sender.append(span, (count: number, err?: string) => {
-        if (err) {
-          return reject(new Error(err));
-        }
-        resolve(count);
-      });
-    });
-  }
-
-  private async _flush(): Promise<void> {
-    await new Promise((resolve, reject) => {
-      this._sender.flush((_count: number, err?: string) => {
-        if (err) {
-          return reject(new Error(err));
-        }
-        this._logger.debug('successful flush for %s spans', _count);
-        resolve();
-      });
-    });
-  }
+export {
+  HoneycombExporter
 }
